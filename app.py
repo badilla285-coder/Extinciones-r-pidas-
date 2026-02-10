@@ -14,8 +14,7 @@ def crear_escrito(datos, texto_condena):
     # CUERPO
     doc.add_paragraph("\nEN LO PRINCIPAL: SOLICITA DECLARACIÓN DE EXTINCIÓN; OTROSÍ: ACOMPAÑA DOCUMENTO.")
     
-    p_juez = doc.add_paragraph()
-    # ESTA ES LA LÍNEA QUE DABA ERROR:
+    p_juez = doc.add_paragraph:
     p_juez.add_run(f"\nS.J.L. DE GARANTÍA DE {datos['juzgado'].upper()}").bold = True
 
     cuerpo = doc.add_paragraph()
