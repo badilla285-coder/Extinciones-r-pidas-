@@ -1,3 +1,20 @@
+import os
+import subprocess
+import sys
+
+def instalar_librerias():
+    librerias = ["python-docx", "PyPDF2"]
+    for lib in librerias:
+        try:
+            if lib == "python-docx":
+                import docx
+            elif lib == "PyPDF2":
+                import PyPDF2
+        except ImportError:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", lib])
+
+instalar_librerias()
+
 import streamlit as st
 from docx import Document
 from docx.shared import Pt
@@ -38,10 +55,10 @@ def crear_escrito(datos, texto_condena):
     target.seek(0)
     return target
 
-st.set_page_config(page_title="Generador de Escritos", layout="centered")
+st.set_page_config(page_title="Generador de Escritos RPA", layout="centered")
 st.title("⚖️ Generador de Escritos de Extinción")
 
-with st.form("formulario_legal"):
+with st.form("formulario_defensoria"):
     col1, col2 = st.columns(2)
     with col1:
         nombre_defensor = st.text_input("Nombre del Defensor")
@@ -57,28 +74,31 @@ with st.form("formulario_legal"):
 
 if boton_generar:
     if not pdf_file or not nombre_defensor:
-        st.error("Complete los campos y suba el PDF.")
+        st.error("Debe completar los campos y subir el PDF.")
     else:
-        reader = PyPDF2.PdfReader(pdf_file)
-        texto_completo = ""
-        for page in reader.pages:
-            texto_completo += page.extract_text() + "\n"
+        try:
+            reader = PyPDF2.PdfReader(pdf_file)
+            texto_completo = ""
+            for page in reader.pages:
+                texto_completo += page.extract_text() + "\n"
 
-        datos_causa = {
-            "nombre_defensor": nombre_defensor,
-            "nombre_adolescente": nombre_adolescente,
-            "juzgado": juzgado,
-            "ruc": ruc,
-            "rit": rit,
-            "condenado_en": condenado_en
-        }
+            datos_causa = {
+                "nombre_defensor": nombre_defensor,
+                "nombre_adolescente": nombre_adolescente,
+                "juzgado": juzgado,
+                "ruc": ruc,
+                "rit": rit,
+                "condenado_en": condenado_en
+            }
 
-        archivo_resultado = crear_escrito(datos_causa, texto_completo)
-        
-        st.success("✅ Escrito generado.")
-        st.download_button(
-            label="📥 Descargar Escrito Word",
-            data=archivo_resultado,
-            file_name=f"Escrito_Extincion_{nombre_adolescente}.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
+            archivo_resultado = crear_escrito(datos_causa, texto_completo)
+            
+            st.success("✅ Escrito generado.")
+            st.download_button(
+                label="📥 Descargar Escrito Word",
+                data=archivo_resultado,
+                file_name=f"Escrito_Extincion_{nombre_adolescente}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+        except Exception as e:
+            st.error(f"Error: {e}")
