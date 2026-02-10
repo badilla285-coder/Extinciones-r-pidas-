@@ -1,20 +1,3 @@
-import os
-import subprocess
-import sys
-
-def instalar_librerias():
-    librerias = ["python-docx", "PyPDF2"]
-    for lib in librerias:
-        try:
-            if lib == "python-docx":
-                import docx
-            elif lib == "PyPDF2":
-                import PyPDF2
-        except ImportError:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", lib])
-
-instalar_librerias()
-
 import streamlit as st
 from docx import Document
 from docx.shared import Pt
