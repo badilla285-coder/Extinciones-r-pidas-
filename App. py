@@ -1,0 +1,92 @@
+import streamlit as st
+from docx import Document
+from docx.shared import Pt
+import PyPDF2
+import io
+
+def crear_escrito(datos, texto_condena):
+    doc = Document()
+    
+    # Configuración de estilo
+    style = doc.styles['Normal']
+    style.font.name = 'Arial'
+    style.font.size = Pt(12)
+
+    # ENCABEZADO
+    p = doc.add_paragraph()
+    p.add_run(f"SUMILLA: SOLICITA DECLARACIÓN DE EXTINCIÓN DE RESPONSABILIDAD PENAL.\n").bold = True
+    p.add_run(f"RIT: {datos['rit']}\n")
+    p.add_run(f"RUC: {datos['ruc']}\n")
+    p.add_run(f"TRIBUNAL: {datos['juzgado']}\n")
+
+    # CUERPO
+    doc.add_paragraph(f"\nEN LO PRINCIPAL: SOLICITA DECLARACIÓN DE EXTINCIÓN; OTROSÍ: ACOMPAÑA DOCUMENTO.")
+    
+    p_juez = doc.add_paragraph()
+    p_juez.add_run(f"\nS.J.L. DE GARANTÍA DE {datos['juzgado'].upper()}").bold = True
+
+    cuerpo = doc.add_paragraph()
+    cuerpo.add_run(f"\n{datos['nombre_defensor']}, abogado de la Defensoría Penal Pública, en representación del adolescente {datos['nombre_adolescente']}, en la causa RIT {datos['rit']}, a SS. con respeto digo:\n")
+    
+    cuerpo.add_run(f"\nQue, por este acto, vengo en solicitar se declare la extinción de la responsabilidad penal de mi representado en la presente causa, por haber sido condenado por un tribunal de adultos a una pena privativa de libertad, según consta en la resolución que se acompaña y cuyos fundamentos se transcriben a continuación:\n")
+
+    # TRANSCRIPCIÓN DEL PDF (FUNDAMENTOS)
+    doc.add_heading('FUNDAMENTOS DE LA CONDENA DE ADULTO', level=2)
+    p_pdf = doc.add_paragraph()
+    p_pdf.add_run(texto_condena)
+    
+    # ARGUMENTACIÓN JURÍDICA ROBUSTA
+    base_legal = doc.add_paragraph()
+    base_legal.add_run(f"\nPOR TANTO, de acuerdo a lo dispuesto en la Ley 20.084 y las normas generales sobre extinción de responsabilidad penal del Código Penal:\n")
+    base_legal.add_run(f"SOLICITO A SS. tener por solicitada la extinción, declarar la misma y ordenar el archivo de los antecedentes.").bold = True
+
+    # Guardar en buffer
+    target = io.BytesIO()
+    doc.save(target)
+    return target
+
+# --- INTERFAZ STREAMLIT ---
+st.set_page_config(page_title="Generador de Escritos - Nacho", layout="centered")
+st.title("⚖️ Generador de Escritos de Extinción")
+st.markdown("Crea escritos robustos para la Defensoría de forma automatizada.")
+
+with st.form("datos_escrito"):
+    col1, col2 = st.columns(2)
+    with col1:
+        nombre_defensor = st.text_input("Nombre del Defensor")
+        nombre_adolescente = st.text_input("Nombre del Adolescente")
+        juzgado = st.text_input("Juzgado que conoce la ejecución")
+    with col2:
+        ruc = st.text_input("RUC")
+        rit = st.text_input("RIT")
+        condenado_en = st.text_input("Tribunal donde fue condenado (Adulto)")
+
+    pdf_file = st.file_uploader("Insertar PDF con condena de adulto", type="pdf")
+    
+    submit = st.form_submit_button("Generar Escrito Robusto")
+
+if submit and pdf_file:
+    # Leer PDF
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    texto_extraido = ""
+    for page in pdf_reader.pages:
+        texto_extraido += page.extract_text()
+
+    datos = {
+        "nombre_defensor": nombre_defensor,
+        "nombre_adolescente": nombre_adolescente,
+        "juzgado": juzgado,
+        "ruc": ruc,
+        "rit": rit,
+        "condenado_en": condenado_en
+    }
+
+    archivo_word = crear_escrito(datos, texto_extraido)
+    
+    st.success("✅ Escrito generado con éxito")
+    st.download_button(
+        label="📥 Descargar Escrito (.docx)",
+        data=archivo_word.getvalue(),
+        file_name=f"Extincion_{nombre_adolescente}.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
